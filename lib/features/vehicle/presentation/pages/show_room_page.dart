@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // 引入 Supabase
 import 'preview_page.dart';
 import '../../domain/entities/vehicle.dart';
 import '../widgets/vehicle_card.dart';
-import '../../data/models/vehicle_model.dart'; // 預留給未來 API 的 Model
+// 預留給未來 API 的 Model
 import 'package:flutter_final_revhub/vehicle_data.dart'; // 暫時保留 mock 資料，直到你改好 API
 
 // 引入登入頁面，以便登出後跳轉
