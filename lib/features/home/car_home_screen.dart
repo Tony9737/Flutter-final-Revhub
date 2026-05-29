@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_auth_ui/supabase_auth_ui.dart';
-import '../../services/auth/login_screen.dart';
+import '../../../features/auth/presentation/login_screen.dart';
 // 暫時的測試主畫面，方便你驗證登入邏輯
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

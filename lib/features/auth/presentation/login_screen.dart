@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_auth_ui/supabase_auth_ui.dart';
-import '../../features/car_home_screen.dart';
+import '../../home/car_home_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_button/sign_in_button.dart';
+import '../../vehicle/presentation/pages/show_room_page.dart';
+
+// 定義登入類型的狀態列舉
+enum LoginType { none, email, google, facebook, github }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,8 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _isObscure = true;
-  bool _isLoading = false;
   bool _isSignUpMode = false;
+
+  // 追蹤載入狀態
+  LoginType _currentLoadingType = LoginType.none;
 
   @override
   void dispose() {
@@ -28,7 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _nativeGoogleSignIn() async {
-    setState(() => _isLoading = true);
+    // 只有在沒有任何東西在載入時才允許點擊，並設為 google 載入中
+    if (_currentLoadingType != LoginType.none) return;
+    setState(() => _currentLoadingType = LoginType.google);
+
     try {
       const webClientId =
           '979476390296-mpkperh9dusiodj3a9it39a43ggmlkg8.apps.googleusercontent.com';
@@ -54,7 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
         throw AuthException('找不到 ID Token。');
       }
 
-      // 將憑證傳給 Supabase 換取登入 Session
       final response = await Supabase.instance.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
@@ -62,12 +70,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.session != null && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Google 原生登入成功！')));
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const ShowRoomPage()),
         );
       }
     } catch (error) {
@@ -77,7 +82,28 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _currentLoadingType = LoginType.none);
+    }
+  }
+
+  // web 版的 OAuth 登入（Facebook、GitHub）
+  Future<void> _handleWebOAuth(OAuthProvider provider, LoginType type) async {
+    if (_currentLoadingType != LoginType.none) return;
+    setState(() => _currentLoadingType = type);
+
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        provider,
+        redirectTo: 'io.supabase.flutter://login-callback/',
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('登入失敗: ${error.toString()}')));
+      }
+    } finally {
+      if (mounted) setState(() => _currentLoadingType = LoginType.none);
     }
   }
 
@@ -116,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // 新增：忘記密碼彈出視窗與邏輯
+  // 忘記密碼彈出視窗與邏輯
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController(
       text: _emailController.text,
@@ -188,8 +214,9 @@ class _LoginScreenState extends State<LoginScreen> {
   // 處理 Email 登入與註冊
   void _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_currentLoadingType != LoginType.none) return;
 
-    setState(() => _isLoading = true);
+    setState(() => _currentLoadingType = LoginType.email);
     final supabase = Supabase.instance.client;
 
     try {
@@ -211,31 +238,59 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (response.session != null) {
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('登入成功！')));
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              MaterialPageRoute(builder: (context) => const ShowRoomPage()),
             );
           }
         }
       }
-    } catch (error) {
+    } on AuthException catch (error) {
+      // 專門捕捉 Supabase 驗證相關的異常
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('發生錯誤: ${error.toString()}')));
+        String errorMessage = '發生驗證錯誤，請稍後再試。';
+
+        // 根據 Supabase 回傳的英文訊息轉成繁體中文
+        if (error.message == 'Invalid login credentials') {
+          errorMessage = '電子信箱或密碼錯誤，請重新輸入。';
+        } else if (error.message == 'Email not confirmed') {
+          errorMessage = '您的電子信箱尚未驗證，請先至信箱收取驗證信。';
+        } else if (error.message.contains('rate limit')) {
+          errorMessage = '登入嘗試次數過多，請稍後再試。';
+        } else {
+          // 如果有其他未條列的 Auth 錯誤，就顯示 Supabase 的原始英文訊息
+          errorMessage = '登入失敗: ${error.message}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.grey[800],
+          ),
+        );
+      }
+    } catch (error) {
+      // 捕捉非 Supabase 的一般錯誤
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('系統錯誤: ${error.toString()}'),
+            backgroundColor: Colors.grey[800],
+          ),
+        );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _currentLoadingType = LoginType.none);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 便利變數：只要不是 none，就代表當前有按鈕正在忙碌中
+    final isAnyButtonLoading = _currentLoadingType != LoginType.none;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('車輛展示平台 - 登入'), centerTitle: true),
+      appBar: AppBar(title: const Text('Revhub - 登入'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
@@ -260,10 +315,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 1. Email 輸入框
+                          // Email 輸入框
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            enabled: !isAnyButtonLoading, // 載入中禁用輸入
                             decoration: const InputDecoration(
                               labelText: '電子信箱',
                               prefixIcon: Icon(Icons.email),
@@ -274,10 +330,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // 2. 密碼輸入框
+                          // 密碼輸入框
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _isObscure,
+                            enabled: !isAnyButtonLoading, // 載入中禁用輸入
                             decoration: InputDecoration(
                               labelText: '密碼',
                               prefixIcon: const Icon(Icons.lock),
@@ -288,9 +345,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ? Icons.visibility_off
                                       : Icons.visibility,
                                 ),
-                                onPressed: () {
-                                  setState(() => _isObscure = !_isObscure);
-                                },
+                                onPressed: isAnyButtonLoading
+                                    ? null
+                                    : () => setState(
+                                        () => _isObscure = !_isObscure,
+                                      ),
                               ),
                             ),
                             validator: (val) => (val == null || val.length < 6)
@@ -298,12 +357,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : null,
                           ),
 
-                          // 忘記密碼按鈕 (只在「登入模式」下顯示)
+                          // 忘記密碼按鈕
                           if (!_isSignUpMode)
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: _showForgotPasswordDialog,
+                                onPressed: isAnyButtonLoading
+                                    ? null
+                                    : _showForgotPasswordDialog,
                                 child: const Text(
                                   '忘記密碼？',
                                   style: TextStyle(color: Colors.grey),
@@ -312,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           if (_isSignUpMode) const SizedBox(height: 20),
 
-                          // 3. 登入 / 註冊 按鈕
+                          // 登入 / 註冊 按鈕
                           SizedBox(
                             width: double.infinity,
                             height: 48,
@@ -321,10 +382,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 backgroundColor: Colors.blue,
                                 foregroundColor: Colors.white,
                               ),
-                              onPressed: _isLoading ? null : _handleSubmit,
-                              child: _isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
+                              onPressed: isAnyButtonLoading
+                                  ? null
+                                  : _handleSubmit,
+                              child: _currentLoadingType == LoginType.email
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : Text(
                                       _isSignUpMode ? '註冊' : '登入',
@@ -333,13 +401,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
-                          // 4. 切換 登入/註冊 模式
+                          // 切換 登入/註冊 模式
                           TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _isSignUpMode = !_isSignUpMode;
-                              });
-                            },
+                            onPressed: isAnyButtonLoading
+                                ? null
+                                : () => setState(
+                                    () => _isSignUpMode = !_isSignUpMode,
+                                  ),
                             child: Text(
                               _isSignUpMode ? '已經有帳號？前往登入' : '沒有帳號？前往註冊',
                             ),
@@ -347,13 +415,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const Divider(height: 30),
 
+                          // Google 登入按鈕
                           SizedBox(
                             width: double.infinity,
                             height: 50,
-                            child: _isLoading
+                            child: _currentLoadingType == LoginType.google
                                 ? const Center(
                                     child: CircularProgressIndicator(),
-                                  ) // 載入中狀態
+                                  )
                                 : ClipRRect(
                                     borderRadius: BorderRadius.circular(25),
                                     child: SignInButton(
@@ -365,34 +434,57 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
 
-                          // 5. 社群登入按鈕
-                          SupaSocialsAuth(
-                            socialProviders: const [
-                              OAuthProvider.facebook,
-                              OAuthProvider.twitter,
-                            ],
-                            redirectUrl:
-                                'io.supabase.flutter://login-callback/',
-                            onSuccess: (session) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('社群登入成功！')),
-                              );
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomeScreen(),
-                                ),
-                              );
-                            },
-                            onError: (error) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('發生錯誤: ${error.toString()}'),
-                                ),
-                              );
-                            },
+                          // Facebook 登入按鈕
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: _currentLoadingType == LoginType.facebook
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(25),
+                                    child: SignInButton(
+                                      Buttons.facebook,
+                                      text: "使用 Facebook 帳戶登入",
+                                      onPressed: isAnyButtonLoading
+                                          ? () {}
+                                          : () => _handleWebOAuth(
+                                              OAuthProvider.facebook,
+                                              LoginType.facebook,
+                                            ),
+                                      padding: EdgeInsets.zero,
+                                      shape: const StadiumBorder(),
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // GitHub 登入按鈕
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: _currentLoadingType == LoginType.github
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(25),
+                                    child: SignInButton(
+                                      Buttons.gitHub,
+                                      text: "使用 GitHub 帳戶登入",
+                                      onPressed: isAnyButtonLoading
+                                          ? () {}
+                                          : () => _handleWebOAuth(
+                                              OAuthProvider.github,
+                                              LoginType.github,
+                                            ),
+                                      padding: EdgeInsets.zero,
+                                      shape: const StadiumBorder(),
+                                    ),
+                                  ),
                           ),
                         ],
                       ),

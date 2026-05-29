@@ -37,3 +37,41 @@ flutter:
         - asset: assets/fonts/NotoSansTC-Bold.ttf
   assets:
     - assets/background/
+    - assets/brands/Benz/AMG_GTR/images/cover/
+    - assets/brands/Benz/AMG_GTR/images/detail/
+    - assets/brands/Benz/AMG_GTR/sound/
+    - assets/brands/BMW/M3_Touring/images/cover/
+    - assets/brands/BMW/M3_Touring/images/detail/
+    - assets/brands/BMW/M3_Touring/sound/
+    - assets/brands/Nissan/Z300/images/cover/
+    - assets/brands/Nissan/Z300/images/detail/
+    - assets/brands/Nissan/Z300/sound/
+    - assets/brands/BMW/M4/images/cover/
+    - assets/brands/BMW/M4/images/detail/
+    - assets/brands/BMW/M4/sound/
+    - assets/brands/Porsche/911 GT3 RS/images/cover/
+    - assets/brands/Porsche/911 GT3 RS/images/detail/
+    - assets/brands/Porsche/911 GT3 RS/sound/
+    - assets/brands/Porsche/Cayman GT4 RS/images/cover/
+    - assets/brands/Porsche/Cayman GT4 RS/images/detail/
+    - assets/brands/Porsche/Cayman GT4 RS/sound/
+    - assets/brands/Audi/RS6 Avant/images/cover/
+    - assets/brands/Audi/RS6 Avant/images/detail/
+    - assets/brands/Audi/RS6 Avant/sound/
+    - assets/brands/Nissan/R34/images/cover/
+    - assets/brands/Nissan/R34/images/detail/
+    - assets/brands/Nissan/R34/sound/
+    - assets/brands/Toyota/GR Yaris/images/cover/
+    - assets/brands/Toyota/GR Yaris/images/detail/
+    - assets/brands/Toyota/GR Yaris/sound/
+    - assets/brands/Toyota/GR GT/images/cover/
+    - assets/brands/Toyota/GR GT/images/detail/
+    - assets/brands/Toyota/GR GT/sound/
+    - assets/brands/Ford/Mustang/images/cover/
+    - assets/brands/Ford/Mustang/images/detail/
+    - assets/brands/Ford/Mustang/sound/
+    - assets/brands/Mazda/Miata NA/images/cover/
+    - assets/brands/Mazda/Miata NA/images/detail/
+    - assets/brands/Mazda/Miata NA/sound/
+    - assets/bgms/Moavii - Adventure (freetouse.com).mp3
+    
