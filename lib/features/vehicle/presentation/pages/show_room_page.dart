@@ -28,10 +28,10 @@ class _ShowRoomPageState extends State<ShowRoomPage>
   int _currentTabIndex = 0;
 
   // 當前選取要顯示的國家，預設為全部
- late Set<String> _selectedCountries = mockVehicles
-    .map((Vehicle v) => v.spec.country)
-    .toSet()
-    .cast<String>();
+  late Set<String> _selectedCountries = mockVehicles
+      .map((Vehicle v) => v.spec.country)
+      .toSet()
+      .cast<String>();
 
   @override
   void initState() {
@@ -75,22 +75,31 @@ class _ShowRoomPageState extends State<ShowRoomPage>
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/background/showroom_background.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           scrolledUnderElevation: 0,
-          title: const Text(
-            "Tony's Showroom",
-            style: TextStyle(
-              color: _gold,
-              fontWeight: FontWeight.w900,
-              fontSize: 24,
-              letterSpacing: 1.5,
-            ),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Revhub',
+                style: TextStyle(
+                  color: _gold,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
           ),
           // ✨ 新增：右上角安全登出按鈕
           actions: [
@@ -135,44 +144,36 @@ class _ShowRoomPageState extends State<ShowRoomPage>
             ],
           ),
         ),
-        body: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/background/showroom_background.png'),
-              fit: BoxFit.cover,
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _ThemedSection(
+              child: PreviewPage(
+                favoriteKeys: _favorites,
+                onToggleFavorite: _toggleFavorite,
+                selectedCountries: _selectedCountries,
+              ),
             ),
-          ),
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _ThemedSection(
-                child: PreviewPage(
-                  favoriteKeys: _favorites,
-                  onToggleFavorite: _toggleFavorite,
-                  selectedCountries: _selectedCountries,
-                ),
+            _ThemedSection(
+              child: VehicleCard.fromVehicles(
+                vehicles: _shuffledVehicles,
+                favoriteKeys: _favorites,
+                onToggleFavorite: _toggleFavorite,
               ),
-              _ThemedSection(
-                child: VehicleCard.fromVehicles(
-                  vehicles: _shuffledVehicles,
-                  favoriteKeys: _favorites,
-                  onToggleFavorite: _toggleFavorite,
-                ),
+            ),
+            _ThemedSection(
+              child: VehicleCard.fromVehicles(
+                vehicles: _shuffledVehicles
+                    .where((v) => _selectedCountries.contains(v.spec.country))
+                    .toList(),
+                favoriteKeys: _favorites,
+                onToggleFavorite: _toggleFavorite,
+                emptyMessage: _selectedCountries.isEmpty
+                    ? '請點擊右下角篩選按鈕選取國家'
+                    : null,
               ),
-              _ThemedSection(
-                child: VehicleCard.fromVehicles(
-                  vehicles: _shuffledVehicles
-                      .where((v) => _selectedCountries.contains(v.spec.country))
-                      .toList(),
-                  favoriteKeys: _favorites,
-                  onToggleFavorite: _toggleFavorite,
-                  emptyMessage: _selectedCountries.isEmpty
-                      ? '請點擊右下角篩選按鈕選取國家'
-                      : null,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
         floatingActionButton: _currentTabIndex == 2
             ? FloatingActionButton(
@@ -190,10 +191,10 @@ class _ShowRoomPageState extends State<ShowRoomPage>
 
   void _showFilterDialog() {
     final allCountries = mockVehicles
-    .map((Vehicle v) => v.spec.country)
-    .toSet()
-    .cast<String>() 
-    .toList();
+        .map((Vehicle v) => v.spec.country)
+        .toSet()
+        .cast<String>()
+        .toList();
 
     showDialog(
       context: context,
