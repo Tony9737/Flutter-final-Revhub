@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_final_revhub/features/vehicle/presentation/pages/vehicle_intro_page.dart';
-import 'package:flutter_final_revhub/vehicle_data.dart';
 import 'package:flutter_final_revhub/features/vehicle/domain/entities/vehicle.dart';
 
 class VehicleCard extends StatelessWidget {
@@ -25,6 +24,7 @@ class VehicleCard extends StatelessWidget {
   final String? emptyMessage;
   final Set<String> favoriteKeys;
   final ValueChanged<Vehicle> onToggleFavorite;
+  
   static const Color _cardBase = Color(0xFF17130E);
   static const Color _cardAlt = Color(0xFF0F0C08);
   static const Color _gold = Color(0xFFD4AF37);
@@ -33,107 +33,191 @@ class VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 根據頁面模式取得要顯示的車輛清單
-    final filteredVehicles =
-        vehicles ??
-        mockVehicles.where((v) => v.spec.country == country).toList();
+    // 💡 核心修正：我們在 show_room_page 中已經使用 .fromVehicles 建構子把單一 API 車款包成 List 傳入
+    final displayVehicles = vehicles ?? [];
 
-    // 如果該國家目前沒有車輛，顯示提示畫面
-    if (filteredVehicles.isEmpty) {
+    if (displayVehicles.isEmpty) {
       return Center(
         child: Text(
-          emptyMessage ?? (country != null ? '目前沒有 $country 的車輛' : '目前沒有車輛'),
-          style: const TextStyle(color: _textSub, fontSize: 16),
+          emptyMessage ?? '暫無資料',
+          style: const TextStyle(color: _textSub),
         ),
       );
     }
 
-    // 使用 ListView.builder 建立列表 
-    return ListView.builder(
-      padding: const EdgeInsets.all(12.0),
-      itemCount: filteredVehicles.length,
+    return PageView.builder(
+      itemCount: displayVehicles.length,
       itemBuilder: (context, index) {
-        final vehicle = filteredVehicles[index];
+        final vehicle = displayVehicles[index];
+        final isAlt = index % 2 == 1;
+        final favKey = '${vehicle.brand}-${vehicle.model}';
+        final isFav = favoriteKeys.contains(favKey);
 
         return Card(
-          color: _cardBase,
-          elevation: 8,
-          shadowColor: const Color(0x22000000),
-          margin: const EdgeInsets.only(bottom: 16.0),
+          color: isAlt ? _cardAlt : _cardBase,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: Color(0x4DD4AF37), width: 1),
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: _gold.withOpacity(isAlt ? 0.1 : 0.2),
+              width: 1,
+            ),
           ),
-          clipBehavior: Clip.antiAlias, // 讓內部的圖片也能跟著圓角裁切
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
           child: InkWell(
+            borderRadius: BorderRadius.circular(24),
             onTap: () {
-              final isFavorite = favoriteKeys.contains(
-                vehicleFavoriteKey(vehicle),
-              );
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => VehicleIntroPage(
+                  builder: (context) => VehicleIntroPage(
                     vehicle: vehicle,
-                    isFavorite: isFavorite,
+                    isFavorite: isFav,
                     onToggleFavorite: () => onToggleFavorite(vehicle),
                   ),
                 ),
               );
             },
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 左側：車輛封面圖片
-                Padding(
-                  padding: const EdgeInsets.only(left: 10, top: 10, bottom: 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: 130,
-                      height: 100,
-                      child: Image.asset(
-                        '${vehicle.media.coverPath}/images/cover/cover.jpg',
-                        fit: BoxFit.cover,
-                        // 開發階段若圖片路徑不對，避免紅屏
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: _cardAlt,
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.directions_car,
-                            color: _gold,
-                            size: 40,
+                // 🖼️ 上方車輛大圖區區塊
+                Expanded(
+                  flex: 3,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                     ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        // 💡 修正：直接丟入 vehicle.coverPath，不要做任何字串拼接！
+                        child: vehicle.coverPath.isNotEmpty
+                            ? Image.network(
+                                vehicle.coverPath, // 👈 這裡直接放欄位
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print("❌ 圖片載入失敗網址為: ${vehicle.coverPath}"); // 方便你 Debug 檢查
+                                  return Container(
+                                    color: const Color(0xFF231E18),
+                                    child: const Icon(Icons.directions_car, color: _textSub, size: 50),
+                                  );
+                                },
+                              )
+                            : Container(color: const Color(0xFF231E18)),
+                      ),
+                      // 漸層陰影遮罩
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.6),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      // 品牌標籤與愛心按鈕
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                vehicle.brand.toUpperCase(),
+                                style: const TextStyle(
+                                  color: _gold,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => onToggleFavorite(vehicle),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isFav ? Icons.favorite : Icons.favorite_border,
+                                  color: _gold,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 車款名稱（壓在大圖下方）
+                      Positioned(
+                        left: 20,
+                        bottom: 16,
+                        right: 20,
+                        child: Text(
+                          vehicle.model,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            shadows: [
+                              Shadow(color: Colors.black87, offset: Offset(0, 2), blurRadius: 4),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-
-                // 右側：車輛詳細資訊 (使用 Expanded 填滿剩餘空間)
+                
+                // 📝 下方規格基本數據區塊
                 Expanded(
+                  flex: 2,
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 廠牌與型號
-                        Text(
-                          '${vehicle.brand} ${vehicle.model}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _textMain,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        // 價格與幣別
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'ESTIMATED PRICE',
+                              style: TextStyle(
+                                color: Color(0xFF7A6F5D),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            Text(
+                              '${vehicle.currency} ${(vehicle.price / 10000).toStringAsFixed(0)}萬',
+                              style: const TextStyle(
+                                color: _gold,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
-
-                        // 引擎 Spec
+                        const Divider(color: Color(0xFF2E261D), height: 20),
+                        
+                        // 引擎規格
                         Row(
                           children: [
-                            const Icon(Icons.settings, size: 14, color: _gold),
+                            const Icon(Icons.settings_input_component, size: 14, color: _gold),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -148,7 +232,7 @@ class VehicleCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
 
                         // 馬力
                         Row(
@@ -164,8 +248,9 @@ class VehicleCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        // 國家 (排在最下面並凸顯顏色)
+                        const SizedBox(height: 6),
+                        
+                        // 國家來源
                         Row(
                           children: [
                             const Icon(Icons.public, size: 14, color: _gold),
