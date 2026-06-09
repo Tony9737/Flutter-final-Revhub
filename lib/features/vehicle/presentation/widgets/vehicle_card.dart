@@ -28,7 +28,7 @@ class VehicleCard extends StatelessWidget {
   static const Color _cardBase = Color(0xFF17130E);
   static const Color _cardAlt = Color(0xFF0F0C08);
   static const Color _gold = Color(0xFFD4AF37);
-  static const Color _textMain = Color(0xFFF3EAD5);
+  // static const Color _textMain = Color(0xFFF3EAD5);
   static const Color _textSub = Color(0xFFD8C9A1);
 
   @override
@@ -58,7 +58,7 @@ class VehicleCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
             side: BorderSide(
-              color: _gold.withOpacity(isAlt ? 0.1 : 0.2),
+              color: _gold.withValues(alpha: isAlt ? 0.1 : 0.2),
               width: 1,
             ),
           ),
@@ -88,13 +88,13 @@ class VehicleCard extends StatelessWidget {
                     children: [
                      ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                        // 💡 修正：直接丟入 vehicle.coverPath，不要做任何字串拼接！
+                        // 直接丟入 vehicle.coverPath，不要做任何字串拼接！
                         child: vehicle.coverPath.isNotEmpty
                             ? Image.network(
                                 vehicle.coverPath, // 👈 這裡直接放欄位
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  print("❌ 圖片載入失敗網址為: ${vehicle.coverPath}"); // 方便你 Debug 檢查
+                                  // print("❌ 圖片載入失敗網址為: ${vehicle.coverPath}"); // 方便你 Debug 檢查
                                   return Container(
                                     color: const Color(0xFF231E18),
                                     child: const Icon(Icons.directions_car, color: _textSub, size: 50),
@@ -112,7 +112,7 @@ class VehicleCard extends StatelessWidget {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                Colors.black.withOpacity(0.6),
+                                Colors.black.withValues(alpha: 0.6),
                               ],
                             ),
                           ),
@@ -129,7 +129,7 @@ class VehicleCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -147,7 +147,7 @@ class VehicleCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(

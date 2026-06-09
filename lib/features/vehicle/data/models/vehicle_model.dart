@@ -51,7 +51,7 @@ class VehicleModel extends Vehicle {
           return {'bucket': bucket, 'path': path};
         }
       } catch (e) {
-        print('解析網址失敗: $e');
+        // print('解析網址失敗: $e');
       }
       return null;
     }
@@ -68,7 +68,7 @@ class VehicleModel extends Vehicle {
             .from(avatarInfo['bucket']!)
             .createSignedUrl(avatarInfo['path']!, expireSeconds);
       } catch (e) {
-        print('❌ 頭像簽名失敗 (Bucket: ${avatarInfo['bucket']}, Path: ${avatarInfo['path']}): $e');
+        // print('❌ 頭像簽名失敗 (Bucket: ${avatarInfo['bucket']}, Path: ${avatarInfo['path']}): $e');
         // 如果簽名因為 RLS 失敗，保留原樣防呆
         signedAvatar = rawAvatarPath; 
       }
@@ -84,7 +84,7 @@ class VehicleModel extends Vehicle {
             .from(coverInfo['bucket']!)
             .createSignedUrl(coverInfo['path']!, expireSeconds);
       } catch (e) {
-        print('❌ 封面簽名失敗 (Bucket: ${coverInfo['bucket']}, Path: ${coverInfo['path']}): $e');
+        // print('❌ 封面簽名失敗 (Bucket: ${coverInfo['bucket']}, Path: ${coverInfo['path']}): $e');
         signedCover = rawCoverPath;
       }
     } else {
@@ -99,7 +99,7 @@ class VehicleModel extends Vehicle {
             .from(soundInfo['bucket']!)
             .createSignedUrl(soundInfo['path']!, expireSeconds);
       } catch (e) {
-        print('❌ 音檔簽名失敗 (Bucket: ${soundInfo['bucket']}, Path: ${soundInfo['path']}): $e');
+        // print('❌ 音檔簽名失敗 (Bucket: ${soundInfo['bucket']}, Path: ${soundInfo['path']}): $e');
         signedSound = rawSoundPath;
       }
     } else {

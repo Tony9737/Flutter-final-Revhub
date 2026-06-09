@@ -8,21 +8,29 @@ class PreviewPage extends StatefulWidget {
     required this.favoriteKeys,
     required this.onToggleFavorite,
     required this.selectedCountries,
-    required this.allApiVehicles, // 🔥 接收從 ShowRoomPage 傳進來的真實雲端 API 資料
+    required this.allApiVehicles, 
+    this.storageKeyPrefix = 'preview',
+    this.emptyMessage = '無符合該國家的車款圖片',
   });
 
   final Set<String> favoriteKeys;
   final ValueChanged<Vehicle> onToggleFavorite;
   final Set<String> selectedCountries;
-  final List<Vehicle> allApiVehicles; // 🔥 宣告參數
+  final List<Vehicle> allApiVehicles; 
+  final String storageKeyPrefix;
+  final String emptyMessage;
 
   @override
   State<PreviewPage> createState() => _PreviewPageState();
 }
 
-class _PreviewPageState extends State<PreviewPage> {
+class _PreviewPageState extends State<PreviewPage> with AutomaticKeepAliveClientMixin {
   List<Vehicle> _shuffledVehicles = const [];
   int _shuffleVersion = 0;
+
+  // 2. 必須複寫 wantKeepAlive，並回傳 true
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -33,14 +41,19 @@ class _PreviewPageState extends State<PreviewPage> {
   @override
   void didUpdateWidget(PreviewPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 當外部的篩選國家改變，或是 API 重新整理拿到新資料時，重新觸發打亂過濾
     if (oldWidget.selectedCountries != widget.selectedCountries ||
-        oldWidget.allApiVehicles != widget.allApiVehicles) {
+        _signature(oldWidget.allApiVehicles) != _signature(widget.allApiVehicles) ||
+        oldWidget.storageKeyPrefix != widget.storageKeyPrefix) {
       _shuffleVehicles();
     }
   }
 
-  // 🔀 核心修改：移除對 mockVehicles 的依賴，直接對 API 拿到的資料做篩選與打亂
+  String _signature(List<Vehicle> vehicles) {
+    return vehicles
+        .map((vehicle) => '${vehicle.brand}-${vehicle.model}-${vehicle.spec.country}')
+        .join('|');
+  }
+
   void _shuffleVehicles() {
     final next = widget.allApiVehicles
         .where((Vehicle v) => widget.selectedCountries.contains(v.spec.country))
@@ -57,19 +70,13 @@ class _PreviewPageState extends State<PreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_shuffledVehicles.isEmpty) {
-      return const Center(
-        child: Text(
-          '無符合該國家的車款圖片',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-
     return NotificationListener<ScrollNotification>(
-      onNotification: (_) => true,
+      // ✦ 核心修改：改成 false，允許滾動事件向上傳遞，外層的 RefreshIndicator 才能感應到下拉！
+      onNotification: (_) => false,
       child: CustomScrollView(
-        key: PageStorageKey<String>('preview_scroll_$_shuffleVersion'),
+        key: PageStorageKey<String>(
+          '${widget.storageKeyPrefix}_scroll_$_shuffleVersion',
+        ),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -116,6 +123,16 @@ class _PreviewPageState extends State<PreviewPage> {
               ),
             ),
           ),
+          if (_shuffledVehicles.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Text(
+                  widget.emptyMessage,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ),
+            ),
         ],
       ),
     );
