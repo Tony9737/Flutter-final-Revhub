@@ -9,6 +9,7 @@ class ChromeLayout extends StatelessWidget {
     required this.onLogout,
     required this.onFilterPressed,
     required this.body,
+    required this.onSettingsPressed, // ✦ 新增：將點擊設定事件傳進來
   });
 
   final int vehicleCount;
@@ -16,6 +17,7 @@ class ChromeLayout extends StatelessWidget {
   final Future<void> Function() onLogout;
   final VoidCallback? onFilterPressed;
   final Widget body;
+  final VoidCallback onSettingsPressed; // ✦ 新增
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +32,18 @@ class ChromeLayout extends StatelessWidget {
               Stack(
                 alignment: Alignment.center,
                 children: [
+                  // ✦ 新增：靠左對齊的設定按鈕 Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      HeaderIconButton(
+                        icon: Icons.settings_outlined, // 齒輪圖標
+                        onPressed: onSettingsPressed,
+                      ),
+                    ],
+                  ),
+                  
+                  // 原本靠右對齊的登出按鈕 Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -39,6 +53,8 @@ class ChromeLayout extends StatelessWidget {
                       ),
                     ],
                   ),
+                  
+                  // 原本置中的標題 Row
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -46,16 +62,16 @@ class ChromeLayout extends StatelessWidget {
                         'Revhub',
                         style: TextStyle(
                           color: gold,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 30,
-                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
+                          horizontal: 8,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0x26443312),
@@ -85,7 +101,6 @@ class ChromeLayout extends StatelessWidget {
           child: Stack(
             children: [
               body,
-              // 只有探索(0)與抽卡(1)有篩選
               if (currentTabIndex == 0 || currentTabIndex == 1)
                 Positioned(
                   right: 18,
