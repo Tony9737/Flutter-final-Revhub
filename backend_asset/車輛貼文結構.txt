@@ -1,0 +1,94 @@
+// 每台車可以有多個post，但其他資訊都只能有一份
+// 定義車輛資料結構，包含基本資訊、規格與多媒體資料
+class Vehicle {
+  final String carID;                     // 每台車都有自己獨特的ID
+  final String brand;                     // 可有多台車是同一品牌
+  final String model;                     // 型號理論上是獨特的
+  final String currency;                  // 車輛參考價格幣別
+  final int price;                        // 車輛參考價格
+  final bool hasSound;                    // 是否有音檔 (可連動 Vehicle.soundUrl)
+  final String? soundPath;                // 腳本中的 sound_url (排氣聲浪路徑)
+
+  final VehicleSpec spec;                 // 車輛詳細規格
+  // final VehicleRating rating;             // 個人主觀評分
+
+  const Vehicle({
+    required this.carID,
+    required this.brand,
+    required this.model,
+    this.currency = 'TWD',
+    required this.price,
+    required this.spec,
+    required this.hasSound,
+    this.soundPath,
+  });
+}
+
+// 專門處理車輛規格
+class VehicleSpec {
+  final String engine;                     // 引擎描述
+  final int horsepower;                    // 馬力數字
+  final String country;                    // 品牌是那個國家
+  final String vehicleType;                // 車輛主觀判斷種類
+  final String? officialImage;             // 官方圖片路徑
+
+  const VehicleSpec({
+    required this.engine,
+    required this.horsepower,
+    required this.country,
+    required this.vehicleType,
+    this.officialImage,
+  });
+}
+
+// 專門處理多媒體與路徑
+class VehiclePost {
+  final String postID;                      // 貼文ID
+  final String carID;                       // 這篇貼文屬於哪一台車！
+  final String author;                      // 作者名稱
+  final String authorAvatarPath;            // 作者頭像路徑
+  final String coverPath;                   // 貼文封面圖片路徑
+  final String sourceUrl;                   // 對應 IG 原始網址或主要資源路徑
+  final String description;                 // 車輛貼文描述
+  final int detailPicCount;                 // 若貼文是圖片，那總共有幾張
+  final bool isVideo;                       // 決定貼文是影片還是圖片
+  final bool hasSound;                      // 貼文下方是否有試聽音檔
+  final bool isGifCover;                    // 貼文封面是否是GIF
+  final String? soundFilePath;              // 試聽音檔的路徑
+  final VehicleRating rating;               // 評分移到貼文，對應 posts.rating
+
+  const VehiclePost({
+    required this.postID,
+    required this.carID,
+    required this.author,
+    required this.authorAvatarPath,
+    required this.coverPath,
+    required this.sourceUrl,
+    required this.description,  
+    required this.detailPicCount,
+    required this.isVideo,
+    required this.hasSound,
+    required this.isGifCover,
+    this.soundFilePath,
+    required this.rating,
+  });
+}
+
+// 專門處理車輛評分
+class VehicleRating {
+  final String ratingTitle1;
+  final String ratingTitle2;
+  final String ratingTitle3;
+  final int rating1;
+  final int rating2;
+  final int rating3;
+
+  const VehicleRating({
+    required this.ratingTitle1,
+    this.ratingTitle2 = '速度',    // 可給予預設值
+    this.ratingTitle3 = '實用度',   // 可給予預設值
+    required this.rating1,
+    required this.rating2,
+    required this.rating3,
+  });
+}

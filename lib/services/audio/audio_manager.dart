@@ -8,8 +8,8 @@ class AudioManager {
   // 🎵 定義你的黑金賽道曲目庫（請確保 assets 中有對應音檔）
   static const Map<String, String> trackMap = {
     '冒險旅程 (預設)': 'bgms/Moavii - Adventure (freetouse.com).mp3',
-    '暗夜極速 (Neon)': 'bgms/neon_speed.mp3',
-    '午夜極簡 (Lo-Fi)': 'bgms/midnight_lofi.mp3',
+    '暗夜極速 (Neon)': 'bgms/DJ Moxiie - Fighting Against The Odds.wav',
+    '午夜極簡 (Lo-Fi)': 'bgms/Ice 1 (Practice and Practice  Cloud Race, Necord version) - KartRider_ Drift Music Extended.mp3',
   };
 
   final AudioPlayer _bgmPlayer = AudioPlayer();
