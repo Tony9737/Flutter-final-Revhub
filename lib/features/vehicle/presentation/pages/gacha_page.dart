@@ -34,19 +34,19 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     
-    // 1. 懸浮呼吸：無限循環
+    // 懸浮呼吸：無限循環
     _hoverController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
 
-    // 2. 3D 翻牌：點擊時觸發
+    // 3D 翻牌：點擊時觸發
     _flipController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
 
-    // 3. 流光：無限循環
+    // 流光：無限循環
     _shineController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2500),
@@ -105,7 +105,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🏆 頂部奢華標題
+              // 頂部標題
               const Text(
                 'Revhub Garage',
                 style: TextStyle(
@@ -140,11 +140,11 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
                 child: GestureDetector(
                   onTap: () {
                     if (_isFlipped && _drawnVehicle != null) {
-                      // ✦ 修正 2：計算當前抽到車輛的 Favorite Key（格式與 show_room_page.dart 的 _getVehicleKey 一致）
+                      // 計算當前抽到車輛的 Favorite Key（格式與 show_room_page.dart 的 _getVehicleKey 一致）
                       final vehicleKey = '${_drawnVehicle!.brand}-${_drawnVehicle!.model}';
                       final isCarFavorite = widget.favoriteKeys.contains(vehicleKey);
 
-                      // ✦ 修正 3：導頁至 VehicleIntroPage 傳入對應參數
+                      // ✦ 導頁至 VehicleIntroPage 傳入對應參數
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -171,7 +171,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
 
                       return Transform(
                         transform: Matrix4.identity()
-                          ..setEntry(3, 2, 0.0012) // 關鍵：增加透視深度感
+                          ..setEntry(3, 2, 0.0012) 
                           ..rotateY(angle),
                         alignment: Alignment.center,
                         child: isBack
@@ -190,7 +190,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
 
               const SizedBox(height: 50),
 
-              // 🔑 奢華旋轉流光抽卡按鈕
+              // 抽卡按鈕
               _buildDrawButton(),
             ],
           ),
@@ -199,7 +199,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
     );
   }
 
-  // 🎴 卡片背面：神祕黑金盲盒狀態
+  // 🎴 卡片背面
   Widget _buildCardBack() {
     return Container(
       width: 260,
@@ -273,7 +273,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
     );
   }
 
-  // 🏎 卡片正面：抽中車輛的高奢展示面
+  // 卡片正面：抽中車輛的高奢展示面
   Widget _buildCardFront() {
     if (_drawnVehicle == null) return const SizedBox.shrink();
 
@@ -286,7 +286,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
         border: Border.all(color: const Color(0xFFC9A227), width: 2.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFC9A227).withOpacity(0.3),
+            color: const Color(0xFFC9A227).withValues(alpha: 0.25),
             blurRadius: 30,
             spreadRadius: 3,
           )
@@ -296,7 +296,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(21),
         child: Stack(
           children: [
-            // 1. 車輛大圖背景
+            // 車輛大圖背景
             Positioned.fill(
               child: Image.network(
                 _drawnVehicle!.coverPath,
@@ -307,7 +307,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // 2. 高奢漸層遮罩，確保文字清晰
+            // 高奢漸層遮罩，確保文字清晰
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -320,7 +320,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // 3. 頂部品牌標籤
+            // 頂部品牌標籤
             Positioned(
               top: 16,
               left: 16,
@@ -337,7 +337,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // 4. 底部車輛資訊
+            // 底部車輛資訊
             Positioned(
               bottom: 20,
               left: 16,
@@ -374,7 +374,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
               ),
             ),
 
-            // 5. ✨ 卡片表面斜向流光層
+            // 卡片表面斜向流光層
             Positioned.fill(
               child: IgnorePointer(
                 child: AnimatedBuilder(
@@ -410,7 +410,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
     );
   }
 
-  // 🔑 按鈕：沿用旋轉流光高奢設定
+  // 按鈕：旋轉流光高奢設定
   Widget _buildDrawButton() {
     return AnimatedBuilder(
       animation: _shineController,
@@ -431,7 +431,7 @@ class _GachaPageState extends State<GachaPage> with TickerProviderStateMixin {
               boxShadow: !_isDrawing
                   ? [
                       BoxShadow(
-                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       )

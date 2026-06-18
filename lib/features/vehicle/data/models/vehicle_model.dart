@@ -27,7 +27,7 @@ class VehicleModel extends Vehicle {
     required super.rating,
   });
 
-  /// 🔐 核心改動：非同步解析與 Private Bucket 簽名方法
+  /// 非同步解析與 Private Bucket 簽名方法
   /// 時效設定為 3600 秒 (1小時)，滿足 Flutter 快取機制需求
   static Future<VehicleModel> fromMapAsync(Map<String, dynamic> map) async {
     final supabase = Supabase.instance.client;
@@ -37,7 +37,7 @@ class VehicleModel extends Vehicle {
     String rawCoverPath = map['cover_path'] ?? '';
     String rawSoundPath = map['sound_file_path'] ?? '';
 
-    /// 🛠️ 核心解析工具：從完整 URL 提取出 [Bucket名稱, 相對路徑]
+    /// 解析工具：從完整 URL 提取出 [Bucket名稱, 相對路徑]
     Map<String, String>? parseStorageUrl(String url) {
       if (url.isEmpty) return null;
       try {
@@ -60,7 +60,7 @@ class VehicleModel extends Vehicle {
     String signedCover = '';
     String? signedSound;
 
-    // 1. 為大頭貼簽名
+    // 為大頭貼簽名
     final avatarInfo = parseStorageUrl(rawAvatarPath);
     if (avatarInfo != null) {
       try {
@@ -76,7 +76,7 @@ class VehicleModel extends Vehicle {
       signedAvatar = rawAvatarPath;
     }
 
-    // 2. 為封面圖簽名
+    // 為封面圖簽名
     final coverInfo = parseStorageUrl(rawCoverPath);
     if (coverInfo != null) {
       try {
@@ -91,7 +91,7 @@ class VehicleModel extends Vehicle {
       signedCover = rawCoverPath;
     }
 
-    // 3. 為引擎聲浪音檔簽名
+    // 為引擎聲浪音檔簽名
     final soundInfo = parseStorageUrl(rawSoundPath);
     if (soundInfo != null && (map['has_sound'] ?? false)) {
       try {
@@ -106,7 +106,7 @@ class VehicleModel extends Vehicle {
       signedSound = rawSoundPath.isNotEmpty ? rawSoundPath : null;
     }
 
-    // 3. 解析其餘外層貼文欄位
+    // 解析其餘外層貼文欄位
     final String postId = map['post_id'] ?? '';
     final String author = map['author'] ?? '匿名';
     final String sourceUrl = map['source_url'] ?? '';
@@ -116,11 +116,11 @@ class VehicleModel extends Vehicle {
     final bool hasPostSound = map['has_sound'] ?? false;
     final bool isGifCover = map['is_gif_cover'] ?? false;
 
-    // 4. 解析巢狀的 rating
+    // 解析巢狀的 rating
     final Map<String, dynamic> ratingMap = map['rating'] as Map<String, dynamic>? ?? {};
     final VehicleRatingModel rating = VehicleRatingModel.fromMap(ratingMap);
 
-    // 5. 解析 Join 進來的 vehicles 資料表
+    // 解析 Join 進來的 vehicles 資料表
     final Map<String, dynamic> vehicleMap = map['vehicles'] as Map<String, dynamic>? ?? {};
     final String carID = vehicleMap['id'] ?? '';
     final String brand = vehicleMap['brand'] ?? '未知品牌';
@@ -130,7 +130,7 @@ class VehicleModel extends Vehicle {
     final bool hasSound = vehicleMap['has_sound'] ?? false;
     final String? soundPath = vehicleMap['sound_path'];
 
-    // 6. 解析 spec
+    // 解析 spec
     final Map<String, dynamic> specMap = vehicleMap['spec'] as Map<String, dynamic>? ?? {};
     final VehicleSpecModel spec = VehicleSpecModel.fromMap(specMap);
 
@@ -145,7 +145,7 @@ class VehicleModel extends Vehicle {
       spec: spec,
       postId: postId,
       author: author,
-      // 🔥 這裡塞入帶有臨時權限 Token 的真實網址，UI 就能直接無痛讀取了！
+      // 這裡塞入帶有臨時權限 Token 的真實網址，UI 就能直接讀取了！
       authorAvatarPath: signedAvatar,
       coverPath: signedCover,
       soundFilePath: signedSound,

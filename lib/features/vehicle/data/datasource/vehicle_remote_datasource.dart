@@ -13,7 +13,7 @@ class VehicleRemoteDataSource {
   Future<List<Map<String, dynamic>>> fetchVehiclePostsWithSpecs() async {
     try {
       // 透過封裝好的 apiClient 取得 Supabase 實例
-      // 使用你的新欄位設計，發出關聯查詢的 GET 請求
+      // 使用你的欄位設計，發出關聯查詢的 GET 請求
       final List<dynamic> response = await apiClient.client
           .from('posts')
           .select('*, vehicles(*)')

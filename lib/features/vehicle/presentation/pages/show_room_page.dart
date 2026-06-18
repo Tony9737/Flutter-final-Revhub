@@ -5,14 +5,16 @@ import 'preview_page.dart';
 import 'gacha_page.dart';
 import '../widgets/chrome_layout.dart';
 import '../widgets/search_section.dart';
-import '../widgets/vehicle_card.dart';
+import '../../../ai_assistant/presentation/pages/gemini_chat_page.dart';
 import '../../domain/entities/vehicle.dart';
 import '../../../auth/presentation/login_screen.dart';
-import '../../../../services/audio/audio_manager.dart'; // ✦ 新增：引入音訊管理器
+import '../../../../core/services/audio/audio_manager.dart'; 
+import '../../../../core/config/local_secrets.dart';
 
 import '../../data/datasource/vehicle_remote_datasource.dart';
 import '../../data/repositories/vehicle_repository_impl.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../ai_assistant/data/services/gemini_recommendation_service.dart';
 
 const Color _gold = Color(0xFFD4AF37);
 
@@ -33,7 +35,13 @@ class _ShowRoomPageState extends State<ShowRoomPage>
   Set<String> _selectedCountries = <String>{};
   bool _isCountriesInitialized = false;
 
+  // 儲存 AI 篩選過後的 car_id 清單（若為 null 代表未啟用 AI 篩選）
+  List<String>? _aiRecommendedIds;
+  String? _aiReason; // 儲存 AI 推薦的一段話
+
   late final VehicleRepositoryImpl _vehicleRepository;
+
+  final _geminiService = GeminiRecommendationService(apiKey: geminiApiKey);
 
   String _getVehicleKey(Vehicle vehicle) => '${vehicle.brand}-${vehicle.model}';
 
@@ -41,10 +49,10 @@ class _ShowRoomPageState extends State<ShowRoomPage>
   void initState() {
     super.initState();
     
-    // 🎵 ✦ 新增：進入展間時，自動開啟高質感背景音樂
+    // 進入展間時，自動開啟高質感背景音樂
     AudioManager.instance.startBgm();
 
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {
@@ -90,7 +98,21 @@ class _ShowRoomPageState extends State<ShowRoomPage>
     });
   }
 
-  // 🎵 ✦ 新增：彈出高質感黑金 BGM 設定控制視窗
+  String convertVehiclesToAiContext(List<Vehicle> vehicles) {
+    return vehicles.map((v) {
+      return {
+        'id': v.carID,
+        'name': '${v.brand} ${v.model}',
+        'type': v.spec.vehicleType,
+        'country': v.spec.country,
+        'engine': v.spec.engine,
+        'hp': v.spec.horsepower,
+        'price': v.price,
+      };
+    }).toList().toString();
+  }
+
+  // 彈出高質感黑金 BGM 設定控制視窗
   void _showSettingsDialog() {
     showDialog(
       context: context,
@@ -126,7 +148,7 @@ class _ShowRoomPageState extends State<ShowRoomPage>
                   const Divider(color: Color(0x22D4AF37), height: 1),
                   const SizedBox(height: 16),
 
-                  // 1. BGM 開關
+                  // BGM 開關
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -152,7 +174,7 @@ class _ShowRoomPageState extends State<ShowRoomPage>
                   ),
                   const SizedBox(height: 16),
 
-                  // 2. 曲目切換下拉選單
+                  // 曲目切換下拉選單
                   const Text('更換曲目', style: TextStyle(color: Color(0xFF9C8D67), fontSize: 13)),
                   const SizedBox(height: 6),
                   Container(
@@ -189,7 +211,7 @@ class _ShowRoomPageState extends State<ShowRoomPage>
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. 音量控制 Slider
+                  // 音量控制 Slider
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -248,6 +270,120 @@ class _ShowRoomPageState extends State<ShowRoomPage>
     );
   }
 
+  void _showAiRecommendDialog(List<Vehicle> allVehicles) {
+    final textController = TextEditingController();
+    bool isAiLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isAiLoading,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setStateSB) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF161616),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Color(0x33D4AF37), width: 1),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: _gold, size: 22),
+                  SizedBox(width: 8),
+                  Text('AI 智慧車輛專家推薦', style: TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 18)),
+                ],
+              ),
+              content: isAiLoading
+                  ? const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(height: 20),
+                        CircularProgressIndicator(color: _gold),
+                        SizedBox(height: 20),
+                        Text('AI 正在翻閱展間清單為您挑選中...', style: TextStyle(color: Color(0xFFF3EAD5), fontSize: 14)),
+                        SizedBox(height: 10),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '告訴 AI 您想要的車輛特徵（例如：「我想要馬力大於 400 匹的德系跑車」或「幫我找找適合代步且有好看的車」）',
+                          style: TextStyle(color: Color(0xFF9C8D67), fontSize: 13),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: textController,
+                          autofocus: true,
+                          style: const TextStyle(color: Color(0xFFF3EAD5)),
+                          cursorColor: _gold,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            hintText: '請輸入您的尋車需求...',
+                            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                            filled: true,
+                            fillColor: const Color(0xFF222222),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _gold)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0x22D4AF37))),
+                          ),
+                        ),
+                      ],
+                    ),
+              actions: isAiLoading
+                  ? null
+                  : [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('取消', style: TextStyle(color: Colors.grey)),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _gold,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          textStyle: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () async {
+                          if (textController.text.trim().isEmpty) return;
+
+                          setStateSB(() { isAiLoading = true; });
+
+                          // 將當前資料庫內的所有車輛壓縮成輕量化 JSON Context
+                          final contextJsonString = convertVehiclesToAiContext(allVehicles);
+
+                          // 呼叫 Gemini 進行推理與精確匹配
+                          final result = await _geminiService.fetchAiRecommendations(
+                            userInput: textController.text.trim(),
+                            vehiclesJsonContext: contextJsonString,
+                          );
+
+                          // 取得 AI 的推薦結果
+                          if (result['success'] == true) {
+                            final List<dynamic> ids = result['recommended_ids'];
+                            setState(() {
+                              _aiRecommendedIds = ids.map((e) => e.toString()).toList();
+                              _aiReason = result['ai_reason'];
+                            });
+                          } else {
+                            // 失敗防呆
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(result['ai_reason'] ?? '篩選失敗，請稍後再試')),
+                            );
+                          }
+
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        },
+                        child: const Text('開始挑選'),
+                      ),
+                    ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,9 +402,7 @@ class _ShowRoomPageState extends State<ShowRoomPage>
             child: BottomNavigationBar(
               currentIndex: _currentTabIndex,
               onTap: (index) {
-                setState(() {
-                  _currentTabIndex = index;
-                });
+                setState(() { _currentTabIndex = index; });
                 _tabController.animateTo(index);
               },
               backgroundColor: Colors.transparent,
@@ -279,25 +413,11 @@ class _ShowRoomPageState extends State<ShowRoomPage>
               type: BottomNavigationBarType.fixed,
               elevation: 0,
               items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined, size: 26),
-                  activeIcon: Icon(Icons.home_rounded, size: 26),
-                  label: '探索',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.layers_outlined, size: 26),
-                  activeIcon: Icon(Icons.layers_rounded, size: 26),
-                  label: '抽卡',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.search_rounded, size: 26),
-                  label: '搜尋',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.favorite_outline_rounded, size: 26),
-                  activeIcon: Icon(Icons.favorite_rounded, size: 26),
-                  label: '收藏',
-                ),
+                BottomNavigationBarItem(icon: Icon(Icons.home_outlined, size: 26), activeIcon: Icon(Icons.home_rounded, size: 26), label: '探索'),
+                BottomNavigationBarItem(icon: Icon(Icons.layers_outlined, size: 26), activeIcon: Icon(Icons.layers_rounded, size: 26), label: '抽卡'),
+                BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined, size: 26), activeIcon: Icon(Icons.auto_awesome_rounded, size: 26), label: 'AI聊車'),
+                BottomNavigationBarItem(icon: Icon(Icons.search_rounded, size: 26), label: '搜尋'),
+                BottomNavigationBarItem(icon: Icon(Icons.favorite_outline_rounded, size: 26), activeIcon: Icon(Icons.favorite_rounded, size: 26), label: '收藏'),
               ],
             ),
           ),
@@ -359,66 +479,137 @@ class _ShowRoomPageState extends State<ShowRoomPage>
                   });
                 }
 
-                final filteredVehicles = allVehicles.where((v) => _selectedCountries.contains(v.spec.country)).toList();
+                // 複合式篩選邏輯（國家過濾 + AI 智慧推薦過濾）
+                final filteredVehicles = allVehicles.where((v) {
+                  final matchesCountry = _selectedCountries.contains(v.spec.country);
+                  // 如果 AI 推薦清單存在，則車輛必須符合 AI 回傳的 ID 陣列
+                  final matchesAi = _aiRecommendedIds == null || _aiRecommendedIds!.contains(v.carID);
+                  return matchesCountry && matchesAi;
+                }).toList();
+
                 final favoriteVehicles = allVehicles.where((v) => _favorites.contains(_getVehicleKey(v))).toList();
 
-                return ChromeLayout(
-                  vehicleCount: allVehicles.length,
-                  currentTabIndex: _currentTabIndex,
-                  onLogout: () => _logout(context),
-                  onFilterPressed: allVehicles.isEmpty ? null : () => _showFilterDialog(allVehicles),
-                  body: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Index 0: 探索
-                      RefreshIndicator(
-                        color: _gold,
-                        backgroundColor: const Color(0xFF161616),
-                        onRefresh: _refreshVehicles,
-                        child: PreviewPage(
-                          favoriteKeys: _favorites,
-                          onToggleFavorite: _toggleFavorite,
-                          selectedCountries: _selectedCountries,
-                          allApiVehicles: allVehicles,
-                          storageKeyPrefix: 'explore',
-                        ),
-                      ),
-                      
-                      // Index 1: 抽卡
-                      RefreshIndicator(
-                        color: _gold,
-                        backgroundColor: const Color(0xFF161616),
-                        onRefresh: _refreshVehicles,
-                        child: GachaPage(
-                          vehicles: allVehicles,             // 即你原本的 allVehicles 清單
-                          favoriteKeys: _favorites,          // 傳入主頁面的 _favorites
-                          onToggleFavorite: _toggleFavorite, // 傳入主頁面的 _toggleFavorite 方法
-                          selectedCountries: _selectedCountries, // 傳入主頁面的 _selectedCountries
-                        ),
-                      ),
-
-                      // Index 2: 搜尋
-                      SearchSection(
-                        allVehicles: allVehicles,
+                // 如果在 AI 篩選狀態下，上方安插一個 Banner 提示使用者，並允許一鍵重置
+                Widget mainBody = TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Index 0: 探索 (把原本的 allVehicles 改為經由 AI 篩選後的 filteredVehicles)
+                    RefreshIndicator(
+                      color: _gold,
+                      backgroundColor: const Color(0xFF161616),
+                      onRefresh: _refreshVehicles,
+                      child: PreviewPage(
                         favoriteKeys: _favorites,
                         onToggleFavorite: _toggleFavorite,
+                        selectedCountries: _selectedCountries,
+                        allApiVehicles: filteredVehicles, // 改為 filteredVehicles 完美與 AI 連動
+                        storageKeyPrefix: 'explore',
                       ),
+                    ),
+                    
+                    // Index 1: 抽卡
+                    RefreshIndicator(
+                      color: _gold,
+                      backgroundColor: const Color(0xFF161616),
+                      onRefresh: _refreshVehicles,
+                      child: GachaPage(
+                        vehicles: allVehicles,             
+                        favoriteKeys: _favorites,          
+                        onToggleFavorite: _toggleFavorite, 
+                        selectedCountries: _selectedCountries, 
+                      ),
+                    ),
 
-                      // Index 3: 收藏
-                      RefreshIndicator(
-                        color: _gold,
-                        backgroundColor: const Color(0xFF161616),
-                        onRefresh: _refreshVehicles,
-                        child: PreviewPage(
-                          favoriteKeys: _favorites,
-                          onToggleFavorite: _toggleFavorite,
-                          selectedCountries: favoriteVehicles.map((v) => v.spec.country).toSet(),
-                          allApiVehicles: favoriteVehicles,
-                          storageKeyPrefix: 'favorites',
+                    // Index 2: AI聊車
+                    const GeminiChatPage(),
+
+                    // Index 3: 搜尋
+                    SearchSection(
+                      allVehicles: allVehicles,
+                      favoriteKeys: _favorites,
+                      onToggleFavorite: _toggleFavorite,
+                    ),
+                    
+                    // Index 4: 收藏
+                    RefreshIndicator(
+                      color: _gold,
+                      backgroundColor: const Color(0xFF161616),
+                      onRefresh: _refreshVehicles,
+                      child: PreviewPage(
+                        favoriteKeys: _favorites,
+                        onToggleFavorite: _toggleFavorite,
+                        selectedCountries: favoriteVehicles.map((v) => v.spec.country).toSet(),
+                        allApiVehicles: favoriteVehicles,
+                        storageKeyPrefix: 'favorites',
+                      ),
+                    ),
+                  ],
+                );
+
+                // 如果啟用了 AI 篩選，則把 TabBarView 用 Column 包裹起來，上方插入 AI 專家評語與關閉按鈕
+                if (_aiRecommendedIds != null) {
+                  mainBody = Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xEE1A1510),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _gold.withValues(alpha: 0.5), width: 1),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.auto_awesome, color: _gold, size: 18),
+                                    SizedBox(width: 6),
+                                    Text('AI 推薦結果', style: TextStyle(color: _gold, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  ],
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _aiRecommendedIds = null;
+                                      _aiReason = null;
+                                    });
+                                  },
+                                  child: const Row(
+                                    children: [
+                                      Text('清除篩選', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                      SizedBox(width: 4),
+                                      Icon(Icons.cancel, color: Colors.grey, size: 16),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_aiReason != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _aiReason!,
+                                style: const TextStyle(color: Color(0xFFF3EAD5), fontSize: 13, height: 1.4),
+                              ),
+                            ]
+                          ],
                         ),
                       ),
+                      Expanded(child: mainBody),
                     ],
-                  ),
+                  );
+                }
+
+                return ChromeLayout(
+                  vehicleCount: filteredVehicles.length,
+                  currentTabIndex: _currentTabIndex,
+                  onLogout: () => _logout(context),
+                  onFilterPressed: allVehicles.isEmpty ? null : () => _showAiRecommendDialog(allVehicles),
+                  body: mainBody,
                   onSettingsPressed: _showSettingsDialog,
                 );
               },
@@ -435,49 +626,4 @@ class _ShowRoomPageState extends State<ShowRoomPage>
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
-  void _showFilterDialog(List<Vehicle> allVehicles) {
-    final availableCountries = allVehicles.map((v) => v.spec.country).toSet().toList()..sort();
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setStateSB) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF161616),
-              title: const Text('篩選國家', style: TextStyle(color: _gold, fontWeight: FontWeight.bold)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: availableCountries.map((c) {
-                    final isChecked = _selectedCountries.contains(c);
-                    return CheckboxListTile(
-                      title: Text(c, style: const TextStyle(color: Color(0xFFF3EAD5))),
-                      value: isChecked,
-                      activeColor: _gold,
-                      checkColor: Colors.black,
-                      onChanged: (v) {
-                        setStateSB(() {
-                          setState(() {
-                            final updated = Set<String>.from(_selectedCountries);
-                            if (v!) { updated.add(c); } else { updated.remove(c); }
-                            _selectedCountries = updated;
-                          });
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('關閉', style: TextStyle(color: _gold, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 }

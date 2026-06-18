@@ -15,6 +15,7 @@ dependencies:
   supabase_auth_ui: ^0.5.5
   google_sign_in: ^6.2.1
   sign_in_button: ^3.2.0
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +38,7 @@ flutter:
         - asset: assets/fonts/NotoSansTC-Bold.ttf
   assets:
     - assets/background/
+    - assets/background/showroom_background.png
     - assets/brands/Benz/AMG_GTR/images/cover/
     - assets/brands/Benz/AMG_GTR/images/detail/
     - assets/brands/Benz/AMG_GTR/sound/
@@ -74,4 +76,5 @@ flutter:
     - assets/brands/Mazda/Miata NA/images/detail/
     - assets/brands/Mazda/Miata NA/sound/
     - assets/bgms/Moavii - Adventure (freetouse.com).mp3
-    
+    - assets/bgms/DJ Moxiie - Fighting Against The Odds.wav
+    - assets/bgms/Ice 1 (Practice and Practice  Cloud Race, Necord version) - KartRider_ Drift Music Extended.mp3

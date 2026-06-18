@@ -28,7 +28,7 @@ class _PreviewPageState extends State<PreviewPage> with AutomaticKeepAliveClient
   List<Vehicle> _shuffledVehicles = const [];
   int _shuffleVersion = 0;
 
-  // 2. 必須複寫 wantKeepAlive，並回傳 true
+  // 必須複寫 wantKeepAlive，並回傳 true
   @override
   bool get wantKeepAlive => true;
 
@@ -71,7 +71,6 @@ class _PreviewPageState extends State<PreviewPage> with AutomaticKeepAliveClient
   @override
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
-      // ✦ 核心修改：改成 false，允許滾動事件向上傳遞，外層的 RefreshIndicator 才能感應到下拉！
       onNotification: (_) => false,
       child: CustomScrollView(
         key: PageStorageKey<String>(

@@ -10,8 +10,7 @@ class IntroPage extends StatelessWidget {
       body: GestureDetector(
         onTap: () {
           Navigator.pushReplacement(
-            // 使用 pushReplacement 來替換當前頁面，避免返回到介紹頁面
-            context,
+           context,
             MaterialPageRoute(builder: (context) => const ShowRoomPage()),
           );
         },
