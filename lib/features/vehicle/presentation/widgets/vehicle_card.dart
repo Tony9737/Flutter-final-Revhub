@@ -33,7 +33,6 @@ class VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 💡 核心修正：我們在 show_room_page 中已經使用 .fromVehicles 建構子把單一 API 車款包成 List 傳入
     final displayVehicles = vehicles ?? [];
 
     if (displayVehicles.isEmpty) {
@@ -80,7 +79,7 @@ class VehicleCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 🖼️ 上方車輛大圖區區塊
+                // 上方車輛大圖區區塊
                 Expanded(
                   flex: 3,
                   child: Stack(
@@ -91,7 +90,7 @@ class VehicleCard extends StatelessWidget {
                         // 直接丟入 vehicle.coverPath，不要做任何字串拼接！
                         child: vehicle.coverPath.isNotEmpty
                             ? Image.network(
-                                vehicle.coverPath, // 👈 這裡直接放欄位
+                                vehicle.coverPath,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   // print("❌ 圖片載入失敗網址為: ${vehicle.coverPath}"); // 方便你 Debug 檢查
@@ -181,7 +180,7 @@ class VehicleCard extends StatelessWidget {
                   ),
                 ),
                 
-                // 📝 下方規格基本數據區塊
+                // 下方規格基本數據區塊
                 Expanded(
                   flex: 2,
                   child: Padding(

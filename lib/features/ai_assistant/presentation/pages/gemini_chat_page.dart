@@ -26,7 +26,7 @@ class _GeminiChatPageState extends State<GeminiChatPage> {
   }
 
   void _initGemini() {
-    // 初始化模型（這裡選用快又免費的 gemini-2.5-flash）
+    // 初始化模型（這裡選 gemini-2.5-flash）
     final model = GenerativeModel(
       model: 'gemini-2.5-flash',
       apiKey: geminiApiKey,

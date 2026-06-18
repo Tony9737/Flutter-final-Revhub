@@ -93,7 +93,7 @@ class _VehiclePostScreenState extends State<VehicleIntroPage>
           precacheImage(NetworkImage(signedUrl), context);
         }
       } catch (e) {
-        debugPrint('⚠ 略過不存在的圖片 (Path: $relativePath): $e');
+        debugPrint('略過不存在的圖片 (Path: $relativePath): $e');
       }
     }
 
@@ -137,7 +137,7 @@ class _VehiclePostScreenState extends State<VehicleIntroPage>
     final String officialImageUrl = 
         "https://fsqrgqpthqtvxfpxxxod.supabase.co/storage/v1/object/public/car-assets/${widget.vehicle.brand}/${widget.vehicle.model}/official/cover.jpg";
 
-    // 2. 最外層包覆展間背景圖片 Container
+    // 最外層包覆展間背景圖片 Container
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
@@ -172,8 +172,7 @@ class _VehiclePostScreenState extends State<VehicleIntroPage>
             const SizedBox(width: 8),
           ],
         ),
-        // 1. 移除 extendBodyBehindAppBar: true，讓內容從 AppBar 下方開始，達成留白效果
-        extendBodyBehindAppBar: false, 
+       extendBodyBehindAppBar: false, 
         body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
@@ -216,7 +215,7 @@ class _VehiclePostScreenState extends State<VehicleIntroPage>
                           },
                         ),
                       ),
-                      // 漸層遮罩（調整下方顏色，使其更自然融入背景）
+                      // 漸層遮罩
                       Positioned.fill(
                         child: IgnorePointer(
                           child: Container(
@@ -231,7 +230,7 @@ class _VehiclePostScreenState extends State<VehicleIntroPage>
                           ),
                         ),
                       ),
-                      // 國家標籤（因應排版上移，將原本的 kToolbarHeight 拔除，修正為相對頂部 16）
+                      // 國家標籤
                       Positioned(
                         top: 16,
                         left: 16,
@@ -361,7 +360,7 @@ class _VehiclePostScreenState extends State<VehicleIntroPage>
                         _buildGentlemanInfoCard(officialImageUrl),
                         const SizedBox(height: 20),
 
-                        // 3. 旋轉流光引擎聲浪按鈕區塊
+                        // 旋轉流光引擎聲浪按鈕區塊
                         if (widget.vehicle.hasPostSound) ...[
                           AnimatedBuilder(
                             animation: _shineController,

@@ -5,7 +5,7 @@ class AudioManager {
 
   static final AudioManager instance = AudioManager._();
 
-  // 🎵 定義你的黑金賽道曲目庫（請確保 assets 中有對應音檔）
+  // 定義曲目庫
   static const Map<String, String> trackMap = {
     '冒險旅程 (預設)': 'bgms/Moavii - Adventure (freetouse.com).mp3',
     '暗夜極速 (Neon)': 'bgms/DJ Moxiie - Fighting Against The Odds.wav',

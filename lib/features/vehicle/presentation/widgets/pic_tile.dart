@@ -16,7 +16,7 @@ class PicTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 核心修正：對接 Supabase 雲端寫入的 posts.cover_path 長網址
+    // 對接 Supabase 雲端寫入的 posts.cover_path 長網址
     final String coverUrl = vehicle.coverPath;
 
     return GestureDetector(
@@ -37,7 +37,7 @@ class PicTile extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // 🖼️ 修正：從 Image.asset 改為 Image.network 讀取雲端網址
+            // 從 Image.asset 改為 Image.network 讀取雲端網址
             coverUrl.isNotEmpty
                 ? Image.network(
                     coverUrl,

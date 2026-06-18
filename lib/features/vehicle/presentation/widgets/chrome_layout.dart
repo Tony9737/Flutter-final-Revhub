@@ -9,7 +9,7 @@ class ChromeLayout extends StatelessWidget {
     required this.onLogout,
     required this.onFilterPressed,
     required this.body,
-    required this.onSettingsPressed, // ✦ 新增：將點擊設定事件傳進來
+    required this.onSettingsPressed, // 將點擊設定事件傳進來
   });
 
   final int vehicleCount;
@@ -17,7 +17,7 @@ class ChromeLayout extends StatelessWidget {
   final Future<void> Function() onLogout;
   final VoidCallback? onFilterPressed;
   final Widget body;
-  final VoidCallback onSettingsPressed; // ✦ 新增
+  final VoidCallback onSettingsPressed; 
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,6 @@ class ChromeLayout extends StatelessWidget {
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // ✦ 新增：靠左對齊的設定按鈕 Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [

@@ -502,7 +502,7 @@ class _ShowRoomPageState extends State<ShowRoomPage>
                         favoriteKeys: _favorites,
                         onToggleFavorite: _toggleFavorite,
                         selectedCountries: _selectedCountries,
-                        allApiVehicles: filteredVehicles, // 🔥 改為 filteredVehicles 完美與 AI 連動
+                        allApiVehicles: filteredVehicles, // 改為 filteredVehicles 完美與 AI 連動
                         storageKeyPrefix: 'explore',
                       ),
                     ),
