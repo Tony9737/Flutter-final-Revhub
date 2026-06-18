@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter_final_revhub/services/audio/audio_manager.dart';
+import 'package:flutter_final_revhub/core/services/audio/audio_manager.dart';
 import '../../domain/entities/vehicle.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

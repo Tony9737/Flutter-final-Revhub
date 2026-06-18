@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'services/audio/audio_manager.dart'; 
+import 'core/services/audio/audio_manager.dart'; 
 import 'features/auth/presentation/login_screen.dart';
 import 'features/vehicle/presentation/pages/show_room_page.dart';
 
